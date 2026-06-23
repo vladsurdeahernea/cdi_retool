@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Climate Democracy Index — Interactive Builder</title>
+<style>
+  :root{
+    --ink:#171717; --stone:#6e6e6e; --mist:#e6e6e6; --line:#d7d7d7;
+    --paper:#fbfbfa; --panel:#ffffff; --fill:#1f1f1f; --track:#ececec; --accentup:#2f6b3f; --accentdn:#9a3b3b;
+    --serif:Georgia,'Times New Roman',serif;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45}
+  a{color:inherit}
+  header.top{padding:22px 26px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+  header.top h1{font-family:var(--serif);font-weight:700;font-size:23px;margin:0 0 3px;letter-spacing:.2px}
+  header.top .sub{color:var(--stone);font-size:13px}
+  header.top .tag{color:var(--stone);font-size:11.5px;margin-top:5px;letter-spacing:.3px;text-transform:uppercase}
+  .app{display:flex;align-items:flex-start;gap:0}
+  aside.controls{width:360px;min-width:360px;border-right:1px solid var(--line);background:var(--panel);
+    padding:18px 20px 40px;position:sticky;top:0;max-height:100vh;overflow-y:auto}
+  main.results{flex:1;padding:20px 26px 60px;min-width:0}
+  h2.sec{font-family:var(--serif);font-size:14px;font-weight:700;margin:20px 0 8px;border-bottom:1px solid var(--line);padding-bottom:5px}
+  aside h2.sec:first-of-type{margin-top:0}
+  .ctl{margin:10px 0}
+  label.lbl{display:block;font-size:12px;color:var(--stone);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+  select,button{font-family:var(--sans);font-size:13px;color:var(--ink);background:var(--panel);
+    border:1px solid var(--line);border-radius:5px;padding:7px 9px}
+  select{width:100%}
+  button{cursor:pointer}
+  button:hover{background:#f2f2f2}
+  .radio-row{display:flex;flex-wrap:wrap;gap:6px}
+  .radio-row label{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:5px;
+    padding:6px 9px;cursor:pointer;font-size:12.5px;background:var(--panel)}
+  .radio-row label.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .radio-row input{display:none}
+  .slider-wrap{display:flex;align-items:center;gap:10px}
+  input[type=range]{flex:1;accent-color:var(--ink)}
+  .val{font-variant-numeric:tabular-nums;font-size:12.5px;min-width:38px;text-align:right;color:var(--ink)}
+  .dimrow{display:grid;grid-template-columns:18px 1fr 70px;align-items:center;gap:8px;padding:5px 0;border-bottom:1px dotted var(--mist)}
+  .dimrow:last-child{border-bottom:none}
+  .dimrow .nm{font-size:12.5px}
+  .dimrow .nm small{color:var(--stone);display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.3px}
+  .dimrow.off{opacity:.4}
+  .dimrow input[type=range]{width:100%}
+  .dimrow input[type=checkbox]{accent-color:var(--ink);width:15px;height:15px}
+  .layerhead{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--stone);margin:12px 0 2px;font-weight:600}
+  .minirow{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px}
+  .minirow button{font-size:11.5px;padding:4px 8px}
+  .presets button{display:block;width:100%;text-align:left;margin:5px 0;padding:8px 10px;font-size:12.5px}
+  .presets button b{font-weight:600}
+  .presets button span{color:var(--stone);font-size:11px}
+  /* results */
+  .summary{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:16px}
+  .summary .cell{background:var(--panel);padding:10px 12px}
+  .summary .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--stone)}
+  .summary .v{font-family:var(--serif);font-size:19px;font-variant-numeric:tabular-nums;margin-top:2px}
+  .formula{font-size:12.5px;color:var(--stone);background:#f4f4f2;border:1px solid var(--line);border-radius:6px;padding:9px 12px;margin-bottom:16px}
+  .formula b{color:var(--ink)}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:12px;flex-wrap:wrap}
+  .toolbar .left{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .chkcmp{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);cursor:pointer}
+  .bars{border-top:1px solid var(--line)}
+  .bar{display:grid;grid-template-columns:26px 150px 1fr 56px 46px;align-items:center;gap:10px;padding:4px 0;border-bottom:1px solid #f0f0f0}
+  .bar .rk{font-variant-numeric:tabular-nums;color:var(--stone);font-size:12px;text-align:right}
+  .bar .nm{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:15px;background:var(--track);border-radius:3px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;height:100%;background:var(--fill)}
+  .pub{position:absolute;top:-2px;width:2px;height:19px;background:#b08900;opacity:.9}
+  .sc{font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right}
+  .dr{font-variant-numeric:tabular-nums;font-size:11.5px;text-align:right;color:var(--stone)}
+  .dr.up{color:var(--accentup)} .dr.dn{color:var(--accentdn)}
+  .note{font-size:11.5px;color:var(--stone);margin-top:14px;line-height:1.5}
+  .pubkey{display:inline-block;width:10px;height:10px;background:#b08900;vertical-align:middle;margin:0 3px}
+  @media(max-width:880px){
+    .app{flex-direction:column}
+    aside.controls{width:100%;min-width:0;position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line)}
+    .summary{grid-template-columns:repeat(3,1fr)}
+    .bar{grid-template-columns:24px 110px 1fr 50px 40px}
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>The Climate Democracy Index &mdash; Interactive Builder</h1>
+  <div class="sub">Set the anchor cap, choose dimensions and weights, and switch aggregation methods to rebuild the EU-27 index.</div>
+  <div class="tag">RETOOL &nbsp;&middot;&nbsp; Buzog&aacute;ny &amp; Surdea-Hernea, BOKU Vienna &nbsp;&middot;&nbsp; defaults reproduce the published CDI</div>
+</header>
+
+<div class="app">
+  <aside class="controls">
+    <h2 class="sec">Year</h2>
+    <div class="radio-row" id="year"></div>
+
+    <h2 class="sec">Anchors &amp; scoring</h2>
+    <div class="ctl">
+      <label class="lbl">Access-proxy cap (applied to V-Dem dimensions)</label>
+      <div class="slider-wrap">
+        <input type="range" id="cap" min="0.50" max="1.00" step="0.01" value="0.80">
+        <span class="val" id="capv">0.80</span>
+      </div>
+      <div style="font-size:11px;color:var(--stone);margin-top:3px">0.80 reproduces the strict published scores; 1.00 uses the raw V-Dem proxy.</div>
+    </div>
+    <div class="ctl">
+      <label class="lbl">Climate-process dimension scores</label>
+      <div class="radio-row" id="cpbase">
+        <label><input type="radio" name="cpbase" value="strict" checked>Strict (coded)</label>
+        <label><input type="radio" name="cpbase" value="raw">Raw source</label>
+      </div>
+    </div>
+
+    <h2 class="sec">Computation</h2>
+    <div class="ctl">
+      <label class="lbl">Index structure</label>
+      <div class="radio-row" id="struct">
+        <label><input type="radio" name="struct" value="two" checked>Two layers</label>
+        <label><input type="radio" name="struct" value="pool">Single pool</label>
+      </div>
+    </div>
+    <div class="ctl">
+      <label class="lbl">Within-group aggregation</label>
+      <select id="within">
+        <option value="arith">Arithmetic mean</option>
+        <option value="geom">Geometric mean</option>
+        <option value="harm">Harmonic mean</option>
+        <option value="min">Minimum (non-compensatory)</option>
+      </select>
+    </div>
+    <div class="ctl" id="layerCombWrap">
+      <label class="lbl">Layer combination (access &times; climate)</label>
+      <select id="layercomb">
+        <option value="geom">Geometric mean</option>
+        <option value="arith">Arithmetic mean</option>
+        <option value="min">Minimum</option>
+      </select>
+    </div>
+
+    <h2 class="sec">Dimensions &amp; weights</h2>
+    <div class="minirow">
+      <button data-q="all">All on</button>
+      <button data-q="da">Access only</button>
+      <button data-q="cp">Climate only</button>
+      <button data-q="resetw">Reset weights</button>
+    </div>
+    <div id="dimsDA"></div>
+    <div id="dimsCP"></div>
+
+    <h2 class="sec">Presets</h2>
+    <div class="presets">
+      <button data-preset="published"><b>Published CDI</b><br><span>strict, two-layer, arithmetic within, geometric across</span></button>
+      <button data-preset="poolarith"><b>Equal-weight single pool</b><br><span>all 11 dimensions, arithmetic mean</span></button>
+      <button data-preset="noncomp"><b>Strict non-compensatory</b><br><span>single pool, geometric mean of all dimensions</span></button>
+      <button data-preset="cponly"><b>Climate process only</b><br><span>the five climate-process dimensions</span></button>
+    </div>
+  </aside>
+
+  <main class="results">
+    <div class="summary" id="summary"></div>
+    <div class="formula" id="formula"></div>
+    <div class="toolbar">
+      <div class="left">
+        <label class="chkcmp"><input type="checkbox" id="cmp"> Compare to published CDI <span class="pubkey"></span></label>
+      </div>
+      <button id="csv">Download ranking (CSV)</button>
+    </div>
+    <div class="bars" id="bars"></div>
+    <div class="note" id="note"></div>
+  </main>
+</div>
+
+<script>
+const DATA = {"dims":[{"code":"INFO","name":"Information & transparency","layer":"DA","kind":"proxy"},{"code":"AJ","name":"Access to justice","layer":"DA","kind":"proxy"},{"code":"DM","name":"Decision-making rules","layer":"DA","kind":"proxy"},{"code":"DEL","name":"Deliberation","layer":"DA","kind":"proxy"},{"code":"IMP","name":"Implementation & enforcement","layer":"DA","kind":"proxy"},{"code":"PART","name":"Participation & representation","layer":"DA","kind":"proxy"},{"code":"EXP","name":"Expert advice & knowledge","layer":"CP","kind":"document"},{"code":"ME","name":"Monitoring, evaluation, revision","layer":"CP","kind":"document"},{"code":"PLAN","name":"Planning","layer":"CP","kind":"document"},{"code":"PI","name":"Policy integration","layer":"CP","kind":"document"},{"code":"TS","name":"Target-setting procedure","layer":"CP","kind":"document"}],"countries":[{"iso":"AUT","name":"Austria","cdi2020":0.571,"cdi2024":0.56,"rank2020":10,"rank2024":16},{"iso":"BEL","name":"Belgium","cdi2020":0.57,"cdi2024":0.592,"rank2020":11,"rank2024":12},{"iso":"BGR","name":"Bulgaria","cdi2020":0.407,"cdi2024":0.424,"rank2020":26,"rank2024":26},{"iso":"HRV","name":"Croatia","cdi2020":0.428,"cdi2024":0.447,"rank2020":23,"rank2024":22},{"iso":"CYP","name":"Cyprus","cdi2020":0.422,"cdi2024":0.444,"rank2020":24,"rank2024":23},{"iso":"CZE","name":"Czechia","cdi2020":0.442,"cdi2024":0.482,"rank2020":22,"rank2024":21},{"iso":"DNK","name":"Denmark","cdi2020":0.749,"cdi2024":0.786,"rank2020":4,"rank2024":1},{"iso":"EST","name":"Estonia","cdi2020":0.471,"cdi2024":0.5,"rank2020":18,"rank2024":19},{"iso":"FIN","name":"Finland","cdi2020":0.732,"cdi2024":0.765,"rank2020":5,"rank2024":5},{"iso":"FRA","name":"France","cdi2020":0.762,"cdi2024":0.76,"rank2020":2,"rank2024":6},{"iso":"DEU","name":"Germany","cdi2020":0.76,"cdi2024":0.768,"rank2020":3,"rank2024":4},{"iso":"GRC","name":"Greece","cdi2020":0.519,"cdi2024":0.65,"rank2020":15,"rank2024":11},{"iso":"HUN","name":"Hungary","cdi2020":0.486,"cdi2024":0.497,"rank2020":16,"rank2024":20},{"iso":"IRL","name":"Ireland","cdi2020":0.689,"cdi2024":0.773,"rank2020":6,"rank2024":2},{"iso":"ITA","name":"Italy","cdi2020":0.535,"cdi2024":0.561,"rank2020":14,"rank2024":15},{"iso":"LVA","name":"Latvia","cdi2020":0.466,"cdi2024":0.524,"rank2020":19,"rank2024":17},{"iso":"LTU","name":"Lithuania","cdi2020":0.477,"cdi2024":0.569,"rank2020":17,"rank2024":14},{"iso":"LUX","name":"Luxembourg","cdi2020":0.668,"cdi2024":0.71,"rank2020":8,"rank2024":10},{"iso":"MLT","name":"Malta","cdi2020":0.585,"cdi2024":0.592,"rank2020":9,"rank2024":13},{"iso":"NLD","name":"Netherlands","cdi2020":0.684,"cdi2024":0.715,"rank2020":7,"rank2024":9},{"iso":"POL","name":"Poland","cdi2020":0.386,"cdi2024":0.444,"rank2020":27,"rank2024":24},{"iso":"PRT","name":"Portugal","cdi2020":0.554,"cdi2024":0.72,"rank2020":13,"rank2024":8},{"iso":"ROU","name":"Romania","cdi2020":0.417,"cdi2024":0.421,"rank2020":25,"rank2024":27},{"iso":"SVK","name":"Slovakia","cdi2020":0.444,"cdi2024":0.435,"rank2020":21,"rank2024":25},{"iso":"SVN","name":"Slovenia","cdi2020":0.451,"cdi2024":0.503,"rank2020":20,"rank2024":18},{"iso":"ESP","name":"Spain","cdi2020":0.562,"cdi2024":0.726,"rank2020":12,"rank2024":7},{"iso":"SWE","name":"Sweden","cdi2020":0.777,"cdi2024":0.77,"rank2020":1,"rank2024":3}],"scores":{"2020":{"AUT":{"INFO":{"raw":0.953,"strict":0.762},"AJ":{"raw":0.951,"strict":0.761},"DM":{"raw":0.825,"strict":0.66},"DEL":{"raw":0.741,"strict":0.593},"EXP":{"raw":0.33,"strict":0.25},"IMP":{"raw":0.956,"strict":0.765},"ME":{"raw":0.6,"strict":0.5},"PART":{"raw":0.777,"strict":0.622},"PLAN":{"raw":0.7,"strict":0.6},"PI":{"raw":0.6,"strict":0.5},"TS":{"raw":0.6,"strict":0.5}},"BEL":{"INFO":{"raw":0.973,"strict":0.778},"AJ":{"raw":0.991,"strict":0.793},"DM":{"raw":0.863,"strict":0.69},"DEL":{"raw":0.821,"strict":0.657},"EXP":{"raw":0.33,"strict":0.25},"IMP":{"raw":0.978,"strict":0.782},"ME":{"raw":0.5,"strict":0.4},"PART":{"raw":0.797,"strict":0.638},"PLAN":{"raw":0.7,"strict":0.6},"PI":{"raw":0.7,"strict":0.6},"TS":{"raw":0.5,"strict":0.4}},"BGR":{"INFO":{"raw":0.777,"strict":0.622},"AJ":{"raw":0.739,"strict":0.591},"DM":{"raw":0.55,"strict":0.44},"DEL":{"raw":0.494,"strict":0.395},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.859,"strict":0.687},"ME":{"raw":0.4,"strict":0.32},"PART":{"raw":0.619,"strict":0.495},"PLAN":{"raw":0.6,"strict":0.5},"PI":{"raw":0.5,"strict":0.4},"TS":{"raw":0.4,"strict":0.32}},"HRV":{"INFO":{"raw":0.84,"strict":0.672},"AJ":{"raw":0.84,"strict":0.672},"DM":{"raw":0.717,"strict":0.573},"DEL":{"raw":0.579,"strict":0.463},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.855,"strict":0.684},"ME":{"raw":0.4,"strict":0.32},"PART":{"raw":0.626,"strict":0.501},"PLAN":{"raw":0.6,"strict":0.5},"PI":{"raw":0.5,"strict":0.4},"TS":{"raw":0.4,"strict":0.32}},"CYP":{"INFO":{"raw":0.892,"strict":0.714},"AJ":{"raw":0.971,"strict":0.777},"DM":{"raw":0.75,"strict":0.6},"DEL":{"raw":0.634,"strict":0.507},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.925,"strict":0.74},"ME":{"raw":0.35,"strict":0.28},"PART":{"raw":0.7,"strict":0.56},"PLAN":{"raw":0.55,"strict":0.45},"PI":{"raw":0.45,"strict":0.36},"TS":{"raw":0.35,"strict":0.28}},"CZE":{"INFO":{"raw":0.917,"strict":0.734},"AJ":{"raw":0.987,"strict":0.79},"DM":{"raw":0.767,"strict":0.614},"DEL":{"raw":0.648,"strict":0.518},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.943,"strict":0.754},"ME":{"raw":0.4,"strict":0.32},"PART":{"raw":0.648,"strict":0.518},"PLAN":{"raw":0.55,"strict":0.45},"PI":{"raw":0.5,"strict":0.4},"TS":{"raw":0.4,"strict":0.32}},"DNK":{"INFO":{"raw":0.977,"strict":0.782},"AJ":{"raw":0.996,"strict":0.797},"DM":{"raw":0.901,"strict":0.721},"DEL":{"raw":0.883,"strict":0.706},"EXP":{"raw":1.0,"strict":0.85},"IMP":{"raw":0.969,"strict":0.775},"ME":{"raw":0.9,"strict":0.75},"PART":{"raw":0.846,"strict":0.676},"PLAN":{"raw":0.9,"strict":0.75},"PI":{"raw":0.8,"strict":0.68},"TS":{"raw":0.9,"strict":0.75}},"EST":{"INFO":{"raw":0.973,"strict":0.778},"AJ":{"raw":0.952,"strict":0.762},"DM":{"raw":0.87,"strict":0.696},"DEL":{"raw":0.718,"strict":0.574},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.976,"strict":0.781},"ME":{"raw":0.4,"strict":0.32},"PART":{"raw":0.768,"strict":0.614},"PLAN":{"raw":0.6,"strict":0.5},"PI":{"raw":0.5,"strict":0.4},"TS":{"raw":0.45,"strict":0.36}},"FIN":{"INFO":{"raw":0.981,"strict":0.784},"AJ":{"raw":0.983,"strict":0.786},"DM":{"raw":0.861,"strict":0.688},"DEL":{"raw":0.808,"strict":0.646},"EXP":{"raw":1.0,"strict":0.85},"IMP":{"raw":0.984,"strict":0.787},"ME":{"raw":0.9,"strict":0.75},"PART":{"raw":0.798,"strict":0.638},"PLAN":{"raw":0.9,"strict":0.75},"PI":{"raw":0.8,"strict":0.68},"TS":{"raw":0.8,"strict":0.68}},"FRA":{"INFO":{"raw":0.96,"strict":0.768},"AJ":{"raw":0.954,"strict":0.763},"DM":{"raw":0.828,"strict":0.662},"DEL":{"raw":0.798,"strict":0.638},"EXP":{"raw":1.0,"strict":0.85},"IMP":{"raw":0.952,"strict":0.762},"ME":{"raw":1.0,"strict":0.85},"PART":{"raw":0.75,"strict":0.6},"PLAN":{"raw":1.0,"strict":0.85},"PI":{"raw":0.9,"strict":0.75},"TS":{"raw":1.0,"strict":0.85}},"DEU":{"INFO":{"raw":0.972,"strict":0.778},"AJ":{"raw":0.993,"strict":0.794},"DM":{"raw":0.848,"strict":0.678},"DEL":{"raw":0.835,"strict":0.668},"EXP":{"raw":1.0,"strict":0.85},"IMP":{"raw":0.989,"strict":0.791},"ME":{"raw":1.0,"strict":0.85},"PART":{"raw":0.804,"strict":0.644},"PLAN":{"raw":0.9,"strict":0.75},"PI":{"raw":0.8,"strict":0.68},"TS":{"raw":1.0,"strict":0.85}},"GRC":{"INFO":{"raw":0.883,"strict":0.707},"AJ":{"raw":0.974,"strict":0.779},"DM":{"raw":0.73,"strict":0.584},"DEL":{"raw":0.686,"strict":0.549},"EXP":{"raw":0.33,"strict":0.25},"IMP":{"raw":0.949,"strict":0.759},"ME":{"raw":0.5,"strict":0.4},"PART":{"raw":0.713,"strict":0.57},"PLAN":{"raw":0.6,"strict":0.5},"PI":{"raw":0.6,"strict":0.5},"TS":{"raw":0.5,"strict":0.4}},"HUN":{"INFO":{"raw":0.71,"strict":0.568},"AJ":{"raw":0.839,"strict":0.671},"DM":{"raw":0.413,"strict":0.33},"DEL":{"raw":0.23,"strict":0.184},"EXP":{"raw":0.33,"strict":0.25},"IMP":{"raw":0.878,"strict":0.702},"ME":{"raw":0.6,"strict":0.5},"PART":{"raw":0.432,"strict":0.346},"PLAN":{"raw":0.7,"strict":0.6},"PI":{"raw":0.6,"strict":0.5},"TS":{"raw":0.8,"strict":0.68}},"IRL":{"INFO":{"raw":0.976,"strict":0.78},"AJ":{"raw":0.976,"strict":0.781},"DM":{"raw":0.86,"strict":0.688},"DEL":{"raw":0.794,"strict":0.635},"EXP":{"raw":1.0,"strict":0.85},"IMP":{"raw":0.976,"strict":0.781},"ME":{"raw":0.8,"strict":0.68},"PART":{"raw":0.802,"strict":0.642},"PLAN":{"raw":0.8,"strict":0.68},"PI":{"raw":0.7,"strict":0.6},"TS":{"raw":0.6,"strict":0.5}},"ITA":{"INFO":{"raw":0.933,"strict":0.747},"AJ":{"raw":0.978,"strict":0.782},"DM":{"raw":0.823,"strict":0.658},"DEL":{"raw":0.786,"strict":0.629},"EXP":{"raw":0.33,"strict":0.25},"IMP":{"raw":0.926,"strict":0.741},"ME":{"raw":0.5,"strict":0.4},"PART":{"raw":0.796,"strict":0.637},"PLAN":{"raw":0.6,"strict":0.5},"PI":{"raw":0.6,"strict":0.5},"TS":{"raw":0.5,"strict":0.4}},"LVA":{"INFO":{"raw":0.948,"strict":0.758},"AJ":{"raw":0.927,"strict":0.742},"DM":{"raw":0.783,"strict":0.626},"DEL":{"raw":0.678,"strict":0.542},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.953,"strict":0.762},"ME":{"raw":0.4,"strict":0.32},"PART":{"raw":0.739,"strict":0.591},"PLAN":{"raw":0.6,"strict":0.5},"PI":{"raw":0.5,"strict":0.4},"TS":{"raw":0.5,"strict":0.4}},"LTU":{"INFO":{"raw":0.936,"strict":0.749},"AJ":{"raw":0.927,"strict":0.742},"DM":{"raw":0.778,"strict":0.623},"DEL":{"raw":0.675,"strict":0.54},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.94,"strict":0.752},"ME":{"raw":0.45,"strict":0.36},"PART":{"raw":0.726,"strict":0.581},"PLAN":{"raw":0.6,"strict":0.5},"PI":{"raw":0.55,"strict":0.45},"TS":{"raw":0.5,"strict":0.4}},"LUX":{"INFO":{"raw":0.961,"strict":0.769},"AJ":{"raw":0.987,"strict":0.79},"DM":{"raw":0.832,"strict":0.666},"DEL":{"raw":0.831,"strict":0.665},"EXP":{"raw":0.67,"strict":0.56},"IMP":{"raw":0.964,"strict":0.771},"ME":{"raw":0.7,"strict":0.6},"PART":{"raw":0.786,"strict":0.629},"PLAN":{"raw":0.8,"strict":0.68},"PI":{"raw":0.7,"strict":0.6},"TS":{"raw":0.8,"strict":0.68}},"MLT":{"INFO":{"raw":0.865,"strict":0.692},"AJ":{"raw":0.894,"strict":0.715},"DM":{"raw":0.698,"strict":0.558},"DEL":{"raw":0.609,"strict":0.487},"EXP":{"raw":0.67,"strict":0.56},"IMP":{"raw":0.907,"strict":0.726},"ME":{"raw":0.7,"strict":0.6},"PART":{"raw":0.676,"strict":0.541},"PLAN":{"raw":0.7,"strict":0.6},"PI":{"raw":0.6,"strict":0.5},"TS":{"raw":0.6,"strict":0.5}},"NLD":{"INFO":{"raw":0.944,"strict":0.755},"AJ":{"raw":0.965,"strict":0.772},"DM":{"raw":0.832,"strict":0.665},"DEL":{"raw":0.804,"strict":0.643},"EXP":{"raw":0.67,"strict":0.56},"IMP":{"raw":0.959,"strict":0.767},"ME":{"raw":0.8,"strict":0.68},"PART":{"raw":0.733,"strict":0.586},"PLAN":{"raw":0.9,"strict":0.75},"PI":{"raw":0.8,"strict":0.68},"TS":{"raw":0.8,"strict":0.68}},"POL":{"INFO":{"raw":0.751,"strict":0.601},"AJ":{"raw":0.735,"strict":0.588},"DM":{"raw":0.531,"strict":0.425},"DEL":{"raw":0.4,"strict":0.32},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.821,"strict":0.657},"ME":{"raw":0.4,"strict":0.32},"PART":{"raw":0.511,"strict":0.409},"PLAN":{"raw":0.55,"strict":0.45},"PI":{"raw":0.5,"strict":0.4},"TS":{"raw":0.4,"strict":0.32}},"PRT":{"INFO":{"raw":0.945,"strict":0.756},"AJ":{"raw":0.883,"strict":0.706},"DM":{"raw":0.846,"strict":0.676},"DEL":{"raw":0.809,"strict":0.647},"EXP":{"raw":0.33,"strict":0.25},"IMP":{"raw":0.925,"strict":0.74},"ME":{"raw":0.5,"strict":0.4},"PART":{"raw":0.712,"strict":0.569},"PLAN":{"raw":0.7,"strict":0.6},"PI":{"raw":0.7,"strict":0.6},"TS":{"raw":0.5,"strict":0.4}},"ROU":{"INFO":{"raw":0.875,"strict":0.7},"AJ":{"raw":0.807,"strict":0.646},"DM":{"raw":0.732,"strict":0.586},"DEL":{"raw":0.468,"strict":0.374},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.842,"strict":0.674},"ME":{"raw":0.4,"strict":0.32},"PART":{"raw":0.646,"strict":0.517},"PLAN":{"raw":0.55,"strict":0.45},"PI":{"raw":0.5,"strict":0.4},"TS":{"raw":0.4,"strict":0.32}},"SVK":{"INFO":{"raw":0.928,"strict":0.742},"AJ":{"raw":0.955,"strict":0.764},"DM":{"raw":0.801,"strict":0.641},"DEL":{"raw":0.676,"strict":0.541},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.91,"strict":0.728},"ME":{"raw":0.4,"strict":0.32},"PART":{"raw":0.698,"strict":0.558},"PLAN":{"raw":0.55,"strict":0.45},"PI":{"raw":0.5,"strict":0.4},"TS":{"raw":0.4,"strict":0.32}},"SVN":{"INFO":{"raw":0.866,"strict":0.693},"AJ":{"raw":0.943,"strict":0.754},"DM":{"raw":0.711,"strict":0.569},"DEL":{"raw":0.594,"strict":0.475},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.928,"strict":0.742},"ME":{"raw":0.4,"strict":0.32},"PART":{"raw":0.67,"strict":0.536},"PLAN":{"raw":0.6,"strict":0.5},"PI":{"raw":0.5,"strict":0.4},"TS":{"raw":0.5,"strict":0.4}},"ESP":{"INFO":{"raw":0.945,"strict":0.756},"AJ":{"raw":0.983,"strict":0.786},"DM":{"raw":0.831,"strict":0.664},"DEL":{"raw":0.769,"strict":0.615},"EXP":{"raw":0.33,"strict":0.25},"IMP":{"raw":0.971,"strict":0.777},"ME":{"raw":0.5,"strict":0.4},"PART":{"raw":0.763,"strict":0.611},"PLAN":{"raw":0.7,"strict":0.6},"PI":{"raw":0.7,"strict":0.6},"TS":{"raw":0.5,"strict":0.4}},"SWE":{"INFO":{"raw":0.977,"strict":0.782},"AJ":{"raw":0.969,"strict":0.775},"DM":{"raw":0.886,"strict":0.709},"DEL":{"raw":0.838,"strict":0.67},"EXP":{"raw":1.0,"strict":0.85},"IMP":{"raw":0.987,"strict":0.79},"ME":{"raw":1.0,"strict":0.85},"PART":{"raw":0.799,"strict":0.639},"PLAN":{"raw":1.0,"strict":0.85},"PI":{"raw":0.9,"strict":0.75},"TS":{"raw":1.0,"strict":0.85}}},"2024":{"AUT":{"INFO":{"raw":0.922,"strict":0.738},"AJ":{"raw":0.927,"strict":0.742},"DM":{"raw":0.8,"strict":0.64},"DEL":{"raw":0.719,"strict":0.575},"EXP":{"raw":0.33,"strict":0.25},"IMP":{"raw":0.928,"strict":0.742},"ME":{"raw":0.6,"strict":0.5},"PART":{"raw":0.705,"strict":0.564},"PLAN":{"raw":0.7,"strict":0.6},"PI":{"raw":0.6,"strict":0.5},"TS":{"raw":0.6,"strict":0.5}},"BEL":{"INFO":{"raw":0.974,"strict":0.779},"AJ":{"raw":0.991,"strict":0.793},"DM":{"raw":0.846,"strict":0.676},"DEL":{"raw":0.787,"strict":0.63},"EXP":{"raw":0.33,"strict":0.25},"IMP":{"raw":0.979,"strict":0.783},"ME":{"raw":0.6,"strict":0.5},"PART":{"raw":0.782,"strict":0.626},"PLAN":{"raw":0.7,"strict":0.6},"PI":{"raw":0.7,"strict":0.6},"TS":{"raw":0.6,"strict":0.5}},"BGR":{"INFO":{"raw":0.778,"strict":0.623},"AJ":{"raw":0.635,"strict":0.508},"DM":{"raw":0.577,"strict":0.462},"DEL":{"raw":0.536,"strict":0.429},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.753,"strict":0.602},"ME":{"raw":0.45,"strict":0.36},"PART":{"raw":0.633,"strict":0.507},"PLAN":{"raw":0.65,"strict":0.55},"PI":{"raw":0.55,"strict":0.45},"TS":{"raw":0.45,"strict":0.36}},"HRV":{"INFO":{"raw":0.847,"strict":0.678},"AJ":{"raw":0.82,"strict":0.656},"DM":{"raw":0.671,"strict":0.537},"DEL":{"raw":0.517,"strict":0.414},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.908,"strict":0.726},"ME":{"raw":0.45,"strict":0.36},"PART":{"raw":0.597,"strict":0.478},"PLAN":{"raw":0.65,"strict":0.55},"PI":{"raw":0.55,"strict":0.45},"TS":{"raw":0.45,"strict":0.36}},"CYP":{"INFO":{"raw":0.878,"strict":0.703},"AJ":{"raw":0.968,"strict":0.774},"DM":{"raw":0.713,"strict":0.57},"DEL":{"raw":0.645,"strict":0.516},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.94,"strict":0.752},"ME":{"raw":0.4,"strict":0.32},"PART":{"raw":0.662,"strict":0.53},"PLAN":{"raw":0.6,"strict":0.5},"PI":{"raw":0.5,"strict":0.4},"TS":{"raw":0.4,"strict":0.32}},"CZE":{"INFO":{"raw":0.97,"strict":0.776},"AJ":{"raw":0.981,"strict":0.785},"DM":{"raw":0.844,"strict":0.675},"DEL":{"raw":0.761,"strict":0.609},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.978,"strict":0.782},"ME":{"raw":0.45,"strict":0.36},"PART":{"raw":0.682,"strict":0.546},"PLAN":{"raw":0.6,"strict":0.5},"PI":{"raw":0.55,"strict":0.45},"TS":{"raw":0.45,"strict":0.36}},"DNK":{"INFO":{"raw":0.986,"strict":0.789},"AJ":{"raw":0.996,"strict":0.797},"DM":{"raw":0.899,"strict":0.72},"DEL":{"raw":0.874,"strict":0.699},"EXP":{"raw":1.0,"strict":0.85},"IMP":{"raw":0.987,"strict":0.79},"ME":{"raw":1.0,"strict":0.85},"PART":{"raw":0.837,"strict":0.669},"PLAN":{"raw":1.0,"strict":0.85},"PI":{"raw":0.9,"strict":0.75},"TS":{"raw":1.0,"strict":0.85}},"EST":{"INFO":{"raw":0.973,"strict":0.778},"AJ":{"raw":0.952,"strict":0.762},"DM":{"raw":0.873,"strict":0.698},"DEL":{"raw":0.784,"strict":0.627},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.977,"strict":0.782},"ME":{"raw":0.45,"strict":0.36},"PART":{"raw":0.761,"strict":0.609},"PLAN":{"raw":0.65,"strict":0.55},"PI":{"raw":0.55,"strict":0.45},"TS":{"raw":0.5,"strict":0.4}},"FIN":{"INFO":{"raw":0.965,"strict":0.772},"AJ":{"raw":0.974,"strict":0.779},"DM":{"raw":0.825,"strict":0.66},"DEL":{"raw":0.771,"strict":0.617},"EXP":{"raw":1.0,"strict":0.85},"IMP":{"raw":0.977,"strict":0.782},"ME":{"raw":1.0,"strict":0.85},"PART":{"raw":0.781,"strict":0.625},"PLAN":{"raw":1.0,"strict":0.85},"PI":{"raw":0.9,"strict":0.75},"TS":{"raw":1.0,"strict":0.85}},"FRA":{"INFO":{"raw":0.947,"strict":0.758},"AJ":{"raw":0.892,"strict":0.714},"DM":{"raw":0.833,"strict":0.666},"DEL":{"raw":0.799,"strict":0.639},"EXP":{"raw":1.0,"strict":0.85},"IMP":{"raw":0.936,"strict":0.749},"ME":{"raw":1.0,"strict":0.85},"PART":{"raw":0.75,"strict":0.6},"PLAN":{"raw":1.0,"strict":0.85},"PI":{"raw":0.95,"strict":0.8},"TS":{"raw":1.0,"strict":0.85}},"DEU":{"INFO":{"raw":0.962,"strict":0.769},"AJ":{"raw":0.993,"strict":0.794},"DM":{"raw":0.816,"strict":0.652},"DEL":{"raw":0.801,"strict":0.641},"EXP":{"raw":1.0,"strict":0.85},"IMP":{"raw":0.987,"strict":0.79},"ME":{"raw":1.0,"strict":0.85},"PART":{"raw":0.776,"strict":0.621},"PLAN":{"raw":1.0,"strict":0.85},"PI":{"raw":0.9,"strict":0.75},"TS":{"raw":1.0,"strict":0.85}},"GRC":{"INFO":{"raw":0.862,"strict":0.689},"AJ":{"raw":0.904,"strict":0.723},"DM":{"raw":0.663,"strict":0.53},"DEL":{"raw":0.622,"strict":0.498},"EXP":{"raw":0.67,"strict":0.56},"IMP":{"raw":0.903,"strict":0.722},"ME":{"raw":0.8,"strict":0.68},"PART":{"raw":0.675,"strict":0.54},"PLAN":{"raw":0.9,"strict":0.75},"PI":{"raw":0.8,"strict":0.68},"TS":{"raw":0.9,"strict":0.75}},"HUN":{"INFO":{"raw":0.683,"strict":0.546},"AJ":{"raw":0.822,"strict":0.658},"DM":{"raw":0.377,"strict":0.302},"DEL":{"raw":0.185,"strict":0.148},"EXP":{"raw":0.33,"strict":0.25},"IMP":{"raw":0.873,"strict":0.698},"ME":{"raw":0.7,"strict":0.6},"PART":{"raw":0.355,"strict":0.284},"PLAN":{"raw":0.8,"strict":0.68},"PI":{"raw":0.7,"strict":0.6},"TS":{"raw":0.8,"strict":0.68}},"IRL":{"INFO":{"raw":0.976,"strict":0.78},"AJ":{"raw":0.976,"strict":0.781},"DM":{"raw":0.863,"strict":0.69},"DEL":{"raw":0.807,"strict":0.646},"EXP":{"raw":1.0,"strict":0.85},"IMP":{"raw":0.977,"strict":0.782},"ME":{"raw":1.0,"strict":0.85},"PART":{"raw":0.796,"strict":0.637},"PLAN":{"raw":1.0,"strict":0.85},"PI":{"raw":0.9,"strict":0.75},"TS":{"raw":1.0,"strict":0.85}},"ITA":{"INFO":{"raw":0.894,"strict":0.715},"AJ":{"raw":0.978,"strict":0.782},"DM":{"raw":0.754,"strict":0.603},"DEL":{"raw":0.693,"strict":0.554},"EXP":{"raw":0.33,"strict":0.25},"IMP":{"raw":0.944,"strict":0.755},"ME":{"raw":0.6,"strict":0.5},"PART":{"raw":0.756,"strict":0.605},"PLAN":{"raw":0.7,"strict":0.6},"PI":{"raw":0.6,"strict":0.5},"TS":{"raw":0.6,"strict":0.5}},"LVA":{"INFO":{"raw":0.952,"strict":0.761},"AJ":{"raw":0.984,"strict":0.787},"DM":{"raw":0.801,"strict":0.641},"DEL":{"raw":0.698,"strict":0.558},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.974,"strict":0.779},"ME":{"raw":0.5,"strict":0.4},"PART":{"raw":0.748,"strict":0.598},"PLAN":{"raw":0.7,"strict":0.6},"PI":{"raw":0.6,"strict":0.5},"TS":{"raw":0.6,"strict":0.5}},"LTU":{"INFO":{"raw":0.932,"strict":0.746},"AJ":{"raw":0.949,"strict":0.759},"DM":{"raw":0.766,"strict":0.613},"DEL":{"raw":0.655,"strict":0.524},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.929,"strict":0.743},"ME":{"raw":0.6,"strict":0.5},"PART":{"raw":0.708,"strict":0.566},"PLAN":{"raw":0.8,"strict":0.68},"PI":{"raw":0.7,"strict":0.6},"TS":{"raw":0.8,"strict":0.68}},"LUX":{"INFO":{"raw":0.969,"strict":0.775},"AJ":{"raw":0.987,"strict":0.79},"DM":{"raw":0.825,"strict":0.66},"DEL":{"raw":0.825,"strict":0.66},"EXP":{"raw":0.8,"strict":0.68},"IMP":{"raw":0.979,"strict":0.783},"ME":{"raw":0.8,"strict":0.68},"PART":{"raw":0.759,"strict":0.607},"PLAN":{"raw":0.9,"strict":0.75},"PI":{"raw":0.8,"strict":0.68},"TS":{"raw":0.9,"strict":0.75}},"MLT":{"INFO":{"raw":0.885,"strict":0.708},"AJ":{"raw":0.904,"strict":0.723},"DM":{"raw":0.711,"strict":0.569},"DEL":{"raw":0.637,"strict":0.51},"EXP":{"raw":0.67,"strict":0.56},"IMP":{"raw":0.933,"strict":0.746},"ME":{"raw":0.7,"strict":0.6},"PART":{"raw":0.695,"strict":0.556},"PLAN":{"raw":0.7,"strict":0.6},"PI":{"raw":0.6,"strict":0.5},"TS":{"raw":0.6,"strict":0.5}},"NLD":{"INFO":{"raw":0.918,"strict":0.735},"AJ":{"raw":0.951,"strict":0.761},"DM":{"raw":0.791,"strict":0.633},"DEL":{"raw":0.73,"strict":0.584},"EXP":{"raw":1.0,"strict":0.85},"IMP":{"raw":0.949,"strict":0.759},"ME":{"raw":0.9,"strict":0.75},"PART":{"raw":0.736,"strict":0.589},"PLAN":{"raw":0.9,"strict":0.75},"PI":{"raw":0.8,"strict":0.68},"TS":{"raw":0.9,"strict":0.75}},"POL":{"INFO":{"raw":0.899,"strict":0.719},"AJ":{"raw":0.763,"strict":0.61},"DM":{"raw":0.672,"strict":0.538},"DEL":{"raw":0.613,"strict":0.49},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.886,"strict":0.709},"ME":{"raw":0.45,"strict":0.36},"PART":{"raw":0.6,"strict":0.48},"PLAN":{"raw":0.6,"strict":0.5},"PI":{"raw":0.55,"strict":0.45},"TS":{"raw":0.45,"strict":0.36}},"PRT":{"INFO":{"raw":0.889,"strict":0.711},"AJ":{"raw":0.813,"strict":0.65},"DM":{"raw":0.791,"strict":0.633},"DEL":{"raw":0.736,"strict":0.589},"EXP":{"raw":1.0,"strict":0.85},"IMP":{"raw":0.885,"strict":0.708},"ME":{"raw":0.9,"strict":0.75},"PART":{"raw":0.693,"strict":0.554},"PLAN":{"raw":1.0,"strict":0.85},"PI":{"raw":0.9,"strict":0.75},"TS":{"raw":1.0,"strict":0.85}},"ROU":{"INFO":{"raw":0.771,"strict":0.617},"AJ":{"raw":0.803,"strict":0.642},"DM":{"raw":0.537,"strict":0.43},"DEL":{"raw":0.273,"strict":0.218},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.814,"strict":0.651},"ME":{"raw":0.5,"strict":0.4},"PART":{"raw":0.475,"strict":0.38},"PLAN":{"raw":0.65,"strict":0.55},"PI":{"raw":0.6,"strict":0.5},"TS":{"raw":0.45,"strict":0.36}},"SVK":{"INFO":{"raw":0.844,"strict":0.675},"AJ":{"raw":0.889,"strict":0.711},"DM":{"raw":0.668,"strict":0.534},"DEL":{"raw":0.369,"strict":0.295},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.881,"strict":0.705},"ME":{"raw":0.45,"strict":0.36},"PART":{"raw":0.603,"strict":0.482},"PLAN":{"raw":0.6,"strict":0.5},"PI":{"raw":0.55,"strict":0.45},"TS":{"raw":0.45,"strict":0.36}},"SVN":{"INFO":{"raw":0.84,"strict":0.672},"AJ":{"raw":0.956,"strict":0.765},"DM":{"raw":0.667,"strict":0.534},"DEL":{"raw":0.614,"strict":0.491},"EXP":{"raw":0.0,"strict":0.0},"IMP":{"raw":0.944,"strict":0.755},"ME":{"raw":0.5,"strict":0.4},"PART":{"raw":0.73,"strict":0.584},"PLAN":{"raw":0.7,"strict":0.6},"PI":{"raw":0.6,"strict":0.5},"TS":{"raw":0.6,"strict":0.5}},"ESP":{"INFO":{"raw":0.917,"strict":0.734},"AJ":{"raw":0.983,"strict":0.786},"DM":{"raw":0.787,"strict":0.63},"DEL":{"raw":0.703,"strict":0.562},"EXP":{"raw":0.8,"strict":0.68},"IMP":{"raw":0.974,"strict":0.779},"ME":{"raw":0.9,"strict":0.75},"PART":{"raw":0.728,"strict":0.582},"PLAN":{"raw":1.0,"strict":0.85},"PI":{"raw":0.9,"strict":0.75},"TS":{"raw":1.0,"strict":0.85}},"SWE":{"INFO":{"raw":0.966,"strict":0.772},"AJ":{"raw":0.964,"strict":0.771},"DM":{"raw":0.863,"strict":0.69},"DEL":{"raw":0.793,"strict":0.634},"EXP":{"raw":1.0,"strict":0.85},"IMP":{"raw":0.982,"strict":0.786},"ME":{"raw":1.0,"strict":0.85},"PART":{"raw":0.786,"strict":0.629},"PLAN":{"raw":1.0,"strict":0.85},"PI":{"raw":0.9,"strict":0.75},"TS":{"raw":1.0,"strict":0.85}}}}};
+const DIMS = DATA.dims, COUNTRIES = DATA.countries, SCORES = DATA.scores;
+const DA = DIMS.filter(d=>d.layer==='DA').map(d=>d.code);
+const CP = DIMS.filter(d=>d.layer==='CP').map(d=>d.code);
+const NAME = Object.fromEntries(DIMS.map(d=>[d.code,d.name]));
+
+const state = {
+  year:'2024', cap:0.80, cpbase:'strict', struct:'two', within:'arith', layercomb:'geom',
+  on:Object.fromEntries(DIMS.map(d=>[d.code,true])),
+  w:Object.fromEntries(DIMS.map(d=>[d.code,1]))
+};
+
+/* ---------- scoring ---------- */
+function rawStrict(year,iso,code){ return SCORES[year][iso][code]; }
+function dimScore(year,iso,code){
+  const s = rawStrict(year,iso,code);
+  const dim = DIMS.find(d=>d.code===code);
+  if(dim.kind==='proxy'){ return Math.min(1, s.raw*state.cap); }
+  return state.cpbase==='raw' ? s.raw : s.strict;
+}
+function aggregate(method, vals, wts){
+  // vals/wts arrays, already filtered to selected (weight>0)
+  if(vals.length===0) return null;
+  if(method==='min') return Math.min.apply(null,vals);
+  const W = wts.reduce((a,b)=>a+b,0);
+  if(W<=0) return null;
+  if(method==='arith') return vals.reduce((a,v,i)=>a+wts[i]*v,0)/W;
+  if(method==='geom'){
+    if(vals.some(v=>v<=0)) return 0;
+    return Math.exp(vals.reduce((a,v,i)=>a+wts[i]*Math.log(v),0)/W);
+  }
+  if(method==='harm'){
+    if(vals.some(v=>v<=0)) return 0;
+    return W/ vals.reduce((a,v,i)=>a+wts[i]/v,0);
+  }
+}
+function combine(method,a,b){
+  if(a==null) return b; if(b==null) return a;
+  if(method==='min') return Math.min(a,b);
+  if(method==='arith') return (a+b)/2;
+  return Math.sqrt(Math.max(0,a)*Math.max(0,b)); // geom
+}
+function selectedIn(codes){ return codes.filter(c=>state.on[c] && state.w[c]>0); }
+function computeOne(iso){
+  const y=state.year;
+  if(state.struct==='pool'){
+    const codes=selectedIn(DA.concat(CP));
+    const vals=codes.map(c=>dimScore(y,iso,c)), wts=codes.map(c=>state.w[c]);
+    return aggregate(state.within, vals, wts);
+  } else {
+    const daC=selectedIn(DA), cpC=selectedIn(CP);
+    const da = aggregate(state.within, daC.map(c=>dimScore(y,iso,c)), daC.map(c=>state.w[c]));
+    const cp = aggregate(state.within, cpC.map(c=>dimScore(y,iso,c)), cpC.map(c=>state.w[c]));
+    return combine(state.layercomb, da, cp);
+  }
+}
+function publishedCDI(iso){ return state.year==='2024'?cmap[iso].cdi2024:cmap[iso].cdi2020; }
+const cmap=Object.fromEntries(COUNTRIES.map(c=>[c.iso,c]));
+
+/* ---------- stats ---------- */
+function pearson(a,b){
+  const n=a.length, ma=a.reduce((x,y)=>x+y,0)/n, mb=b.reduce((x,y)=>x+y,0)/n;
+  let sa=0,sb=0,sab=0;
+  for(let i=0;i<n;i++){const da=a[i]-ma,db=b[i]-mb;sa+=da*da;sb+=db*db;sab+=da*db;}
+  return (sa===0||sb===0)?NaN:sab/Math.sqrt(sa*sb);
+}
+
+/* ---------- render ---------- */
+function render(){
+  const rows = COUNTRIES.map(c=>({iso:c.iso,name:c.name,score:computeOne(c.iso),pub:publishedCDI(c.iso)}))
+    .filter(r=>r.score!=null);
+  rows.sort((x,y)=>y.score-x.score);
+  rows.forEach((r,i)=>r.rank=i+1);
+  // published ranks (within shown set, by published value)
+  const pubSorted=[...rows].sort((x,y)=>y.pub-x.pub); pubSorted.forEach((r,i)=>r.pubrank=i+1);
+  const max = Math.max.apply(null,rows.map(r=>r.score),0.0001);
+
+  // summary
+  const sc=rows.map(r=>r.score);
+  const mean=sc.reduce((a,b)=>a+b,0)/sc.length;
+  const sd=Math.sqrt(sc.reduce((a,b)=>a+(b-mean)*(b-mean),0)/sc.length);
+  const r=pearson(rows.map(x=>x.score),rows.map(x=>x.pub));
+  const changes=rows.filter(x=>x.rank!==x.pubrank).length;
+  const S=document.getElementById('summary');
+  const cells=[['Mean',mean.toFixed(3)],['Std. dev.',sd.toFixed(3)],
+    ['Min',Math.min.apply(null,sc).toFixed(3)],['Max',Math.max.apply(null,sc).toFixed(3)],
+    ['r vs published',isNaN(r)?'—':r.toFixed(2)],['Rank changes',changes]];
+  S.innerHTML=cells.map(c=>`<div class="cell"><div class="k">${c[0]}</div><div class="v">${c[1]}</div></div>`).join('');
+
+  // formula text
+  const wn={arith:'arithmetic mean',geom:'geometric mean',harm:'harmonic mean',min:'minimum'};
+  const ln={geom:'geometric mean',arith:'arithmetic mean',min:'minimum'};
+  const nSel=selectedIn(DA.concat(CP)).length;
+  let f;
+  if(state.struct==='pool'){
+    f=`Single pool: <b>${wn[state.within]}</b> of ${nSel} selected dimensions, with the chosen weights.`;
+  } else {
+    f=`Two layers: within-layer <b>${wn[state.within]}</b>, then access and climate layers combined by <b>${ln[state.layercomb]}</b>.`;
+  }
+  f+=` Access dimensions scored at cap = <b>${state.cap.toFixed(2)}</b> &times; raw; climate-process dimensions use <b>${state.cpbase}</b> values. Year <b>${state.year}</b>.`;
+  document.getElementById('formula').innerHTML=f;
+
+  // bars
+  const cmp=document.getElementById('cmp').checked;
+  const B=document.getElementById('bars');
+  B.innerHTML=rows.map(r=>{
+    const d=r.rank-r.pubrank; // negative = moved up
+    let chip='<span class="dr">—</span>';
+    if(cmp && d!==0){ const up=d<0; chip=`<span class="dr ${up?'up':'dn'}">${up?'▲':'▼'}${Math.abs(d)}</span>`; }
+    else if(!cmp){ chip=''; }
+    const pubmark = cmp ? `<span class="pub" style="left:${(r.pub/max*100).toFixed(2)}%"></span>` : '';
+    return `<div class="bar">
+      <span class="rk">${r.rank}</span>
+      <span class="nm" title="${r.name}">${r.name}</span>
+      <span class="track"><span class="fill" style="width:${(r.score/max*100).toFixed(2)}%"></span>${pubmark}</span>
+      <span class="sc">${r.score.toFixed(3)}</span>
+      ${cmp?chip:'<span></span>'}
+    </div>`;
+  }).join('');
+  const grid = cmp ? '26px 150px 1fr 56px 46px' : '26px 150px 1fr 56px 0px';
+  document.querySelectorAll('.bar').forEach(b=>b.style.gridTemplateColumns=grid);
+
+  // note
+  const zeros = COUNTRIES.length-rows.length;
+  let note=`Bars are scaled to the maximum score in the current configuration. `;
+  if(cmp) note+=`The gold marker (<span class="pubkey"></span>) shows each state&rsquo;s published CDI; arrows give the rank shift from the published ranking. `;
+  if((state.within==='geom'||state.within==='harm')) note+=`Under ${wn[state.within]}, any included dimension scored 0 forces that group to 0, which is the intended non-compensatory behaviour (expert advice is 0 in several states). `;
+  document.getElementById('note').innerHTML=note;
+
+  window.__rows=rows;
+}
+
+/* ---------- build controls ---------- */
+function buildYear(){
+  const el=document.getElementById('year');
+  el.innerHTML=['2020','2024'].map(y=>`<label class="${y===state.year?'on':''}"><input type="radio" name="year" value="${y}" ${y===state.year?'checked':''}>${y}</label>`).join('');
+  el.querySelectorAll('input').forEach(i=>i.onchange=()=>{state.year=i.value;syncRadio(el,i.value);render();});
+}
+function syncRadio(container,val){ container.querySelectorAll('label').forEach(l=>l.classList.toggle('on', l.querySelector('input').value===val)); }
+
+function dimRow(d){
+  return `<div class="dimrow ${state.on[d.code]?'':'off'}" id="row-${d.code}">
+    <input type="checkbox" ${state.on[d.code]?'checked':''} data-on="${d.code}">
+    <span class="nm">${d.name}<small>${d.code} &middot; ${d.kind==='proxy'?'V-Dem proxy':'document-coded'}</small></span>
+    <span class="slider-wrap"><input type="range" min="0" max="3" step="0.25" value="${state.w[d.code]}" data-w="${d.code}"><span class="val" id="wv-${d.code}">${state.w[d.code].toFixed(2)}</span></span>
+  </div>`;
+}
+function buildDims(){
+  document.getElementById('dimsDA').innerHTML='<div class="layerhead">Democratic-access layer</div>'+DIMS.filter(d=>d.layer==='DA').map(dimRow).join('');
+  document.getElementById('dimsCP').innerHTML='<div class="layerhead">Climate-process layer</div>'+DIMS.filter(d=>d.layer==='CP').map(dimRow).join('');
+  document.querySelectorAll('[data-on]').forEach(cb=>cb.onchange=()=>{
+    state.on[cb.dataset.on]=cb.checked; document.getElementById('row-'+cb.dataset.on).classList.toggle('off',!cb.checked); render();
+  });
+  document.querySelectorAll('[data-w]').forEach(sl=>sl.oninput=()=>{
+    state.w[sl.dataset.w]=parseFloat(sl.value); document.getElementById('wv-'+sl.dataset.w).textContent=parseFloat(sl.value).toFixed(2); render();
+  });
+}
+function refreshDimControls(){
+  DIMS.forEach(d=>{
+    const cb=document.querySelector(`[data-on="${d.code}"]`); if(cb)cb.checked=state.on[d.code];
+    const row=document.getElementById('row-'+d.code); if(row)row.classList.toggle('off',!state.on[d.code]);
+    const sl=document.querySelector(`[data-w="${d.code}"]`); if(sl)sl.value=state.w[d.code];
+    const wv=document.getElementById('wv-'+d.code); if(wv)wv.textContent=state.w[d.code].toFixed(2);
+  });
+}
+
+/* radios & selects */
+document.getElementById('cap').oninput=function(){state.cap=parseFloat(this.value);document.getElementById('capv').textContent=state.cap.toFixed(2);render();};
+document.querySelectorAll('#cpbase input').forEach(i=>i.onchange=()=>{state.cpbase=i.value;render();});
+document.getElementById('within').onchange=function(){state.within=this.value;render();};
+document.getElementById('layercomb').onchange=function(){state.layercomb=this.value;render();};
+document.querySelectorAll('#struct input').forEach(i=>i.onchange=()=>{
+  state.struct=i.value; syncRadio(document.getElementById('struct'),i.value);
+  document.getElementById('layerCombWrap').style.display = i.value==='two'?'block':'none'; render();
+});
+document.getElementById('cmp').onchange=render;
+
+/* quick toggles */
+document.querySelectorAll('.minirow button').forEach(b=>b.onclick=()=>{
+  const q=b.dataset.q;
+  if(q==='all') DIMS.forEach(d=>state.on[d.code]=true);
+  if(q==='da'){ DA.forEach(c=>state.on[c]=true); CP.forEach(c=>state.on[c]=false); }
+  if(q==='cp'){ CP.forEach(c=>state.on[c]=true); DA.forEach(c=>state.on[c]=false); }
+  if(q==='resetw') DIMS.forEach(d=>state.w[d.code]=1);
+  refreshDimControls(); render();
+});
+
+/* presets */
+document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{
+  const p=b.dataset.preset;
+  DIMS.forEach(d=>{state.on[d.code]=true;state.w[d.code]=1;});
+  state.cap=0.80; state.cpbase='strict';
+  if(p==='published'){ state.struct='two'; state.within='arith'; state.layercomb='geom'; }
+  if(p==='poolarith'){ state.struct='pool'; state.within='arith'; }
+  if(p==='noncomp'){ state.struct='pool'; state.within='geom'; }
+  if(p==='cponly'){ state.struct='pool'; state.within='arith'; DA.forEach(c=>state.on[c]=false); }
+  applyStateToUI(); render();
+});
+function applyStateToUI(){
+  document.getElementById('cap').value=state.cap; document.getElementById('capv').textContent=state.cap.toFixed(2);
+  document.querySelectorAll('#cpbase input').forEach(i=>i.checked=(i.value===state.cpbase));
+  document.getElementById('within').value=state.within;
+  document.getElementById('layercomb').value=state.layercomb;
+  document.querySelectorAll('#struct input').forEach(i=>i.checked=(i.value===state.struct));
+  syncRadio(document.getElementById('struct'),state.struct);
+  document.getElementById('layerCombWrap').style.display = state.struct==='two'?'block':'none';
+  refreshDimControls();
+}
+
+/* csv */
+document.getElementById('csv').onclick=()=>{
+  const rows=window.__rows||[];
+  let csv='rank,ISO,country,custom_CDI,published_CDI,delta_rank\n';
+  rows.forEach(r=>{csv+=`${r.rank},${r.iso},"${r.name}",${r.score.toFixed(4)},${r.pub.toFixed(4)},${r.pubrank-r.rank}\n`;});
+  const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=`CDI_custom_${state.year}.csv`; a.click();
+};
+
+buildYear(); buildDims(); applyStateToUI(); render();
+</script>
+</body>
+</html>
